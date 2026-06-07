@@ -6,7 +6,7 @@ app = Flask(__name__)
 CORS(app)
 
 # 🔑 PUT YOUR OPENAI KEY HERE
-openai.api_key = "YOUR_OPENAI_API_KEY"
+openai.api_key = "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"
 
 
 @app.route("/generate", methods=["POST"])
