@@ -1,13 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-from openai import OpenAI
+import openai
 
 app = Flask(__name__)
 CORS(app)
 
-# ✅ SAFE API KEY (from Render Environment Variables)
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# 🔐 API KEY (Render Environment Variable)
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 
 # ---------------- HOME ----------------
@@ -29,39 +29,25 @@ def generate():
 
         if mode == "study":
             prompt = f"""
-You are a professional teacher for Indian students.
+You are a teacher.
 
 Topic: {topic}
 
-Create STUDY NOTES:
+Give:
 - Simple definition
-- Key points in bullets
-- Exam important points
-- Real-life example
-- Short revision summary
+- Key points
+- Example
+- Summary
 """
 
         elif mode == "ppt":
             prompt = f"""
-You are a PowerPoint expert.
-
 Create PPT for students.
 
 Topic: {topic}
 
-Rules:
-- 6 to 8 slides
-- Title + 3-4 bullets per slide
-- Clean structure
-
-Format:
-Slide 1: Title
-Slide 2: Introduction
-Slide 3: Main Concept
-Slide 4: Explanation
-Slide 5: Examples
-Slide 6: Uses
-Slide 7: Conclusion
+6-7 slides:
+Title + bullets
 """
 
         elif mode == "code":
@@ -74,40 +60,35 @@ Give:
 1. Code
 2. Explanation
 3. Output
-4. Mistakes
 """
 
         elif mode == "deep":
             prompt = f"""
-You are an advanced AI tutor.
+Explain deeply:
 
 Topic: {topic}
 
-Give full deep explanation:
+Include:
 - Concept
-- Breakdown
+- Details
 - Applications
-- Questions
-- Summary
 """
 
         else:
             prompt = f"Explain {topic} simply"
 
         # ---------------- OPENAI CALL ----------------
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "user", "content": prompt}
             ]
         )
 
-        result = response.choices[0].message.content
+        result = response["choices"][0]["message"]["content"]
 
         return jsonify({
-            "result": result,
-            "mode": mode,
-            "topic": topic
+            "result": result
         })
 
     except Exception as e:
