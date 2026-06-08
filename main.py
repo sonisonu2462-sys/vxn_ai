@@ -1,22 +1,22 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import openai
 import os
+from openai import OpenAI
 
 app = Flask(__name__)
 CORS(app)
 
-# 🔐 API KEY from Render Environment Variables
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+# ✅ SAFE API KEY (from Render Environment Variables)
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
-# ---------------- HOME ROUTE ----------------
+# ---------------- HOME ----------------
 @app.route("/")
 def home():
-    return "VXN AI is running successfully 🚀"
+    return "VXN AI Backend Running 🚀"
 
 
-# ---------------- GENERATE ROUTE ----------------
+# ---------------- GENERATE ----------------
 @app.route("/generate", methods=["POST"])
 def generate():
     try:
@@ -25,7 +25,7 @@ def generate():
         topic = data.get("topic", "")
         mode = data.get("mode", "study")
 
-        # ---------------- MODE PROMPTS ----------------
+        # ---------------- MODES ----------------
 
         if mode == "study":
             prompt = f"""
@@ -33,7 +33,7 @@ You are a professional teacher for Indian students.
 
 Topic: {topic}
 
-Create structured STUDY NOTES:
+Create STUDY NOTES:
 - Simple definition
 - Key points in bullets
 - Exam important points
@@ -45,14 +45,14 @@ Create structured STUDY NOTES:
             prompt = f"""
 You are a PowerPoint expert.
 
-Create a clean PPT for students.
+Create PPT for students.
 
 Topic: {topic}
 
 Rules:
 - 6 to 8 slides
-- Each slide: title + 3-4 bullets
-- Simple English
+- Title + 3-4 bullets per slide
+- Clean structure
 
 Format:
 Slide 1: Title
@@ -71,10 +71,10 @@ You are a coding teacher.
 Topic: {topic}
 
 Give:
-1. Working code
+1. Code
 2. Explanation
-3. Output example
-4. Common mistakes
+3. Output
+4. Mistakes
 """
 
         elif mode == "deep":
@@ -85,24 +85,24 @@ Topic: {topic}
 
 Give full deep explanation:
 - Concept
-- Step-by-step breakdown
-- Real-life applications
-- Viva questions
+- Breakdown
+- Applications
+- Questions
 - Summary
 """
 
         else:
-            prompt = f"Explain {topic} in simple terms"
+            prompt = f"Explain {topic} simply"
 
         # ---------------- OPENAI CALL ----------------
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "user", "content": prompt}
             ]
         )
 
-        result = response["choices"][0]["message"]["content"]
+        result = response.choices[0].message.content
 
         return jsonify({
             "result": result,
@@ -116,6 +116,6 @@ Give full deep explanation:
         })
 
 
-# ---------------- RUN SERVER ----------------
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
