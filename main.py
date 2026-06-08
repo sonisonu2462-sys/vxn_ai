@@ -1,84 +1,121 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-# 🔑 PUT YOUR OPENAI KEY HERE
-openai.api_key = "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"
+# 🔐 API KEY from Render Environment Variables
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 
+# ---------------- HOME ROUTE ----------------
+@app.route("/")
+def home():
+    return "VXN AI is running successfully 🚀"
+
+
+# ---------------- GENERATE ROUTE ----------------
 @app.route("/generate", methods=["POST"])
 def generate():
+    try:
+        data = request.get_json()
 
-    data = request.json
-    topic = data.get("topic")
-    mode = data.get("mode")
+        topic = data.get("topic", "")
+        mode = data.get("mode", "study")
 
-    # ---------------- AI PROMPTS ----------------
+        # ---------------- MODE PROMPTS ----------------
 
-    if mode == "study":
-        prompt = f"""
-Create simple STUDY NOTES for students on: {topic}
+        if mode == "study":
+            prompt = f"""
+You are a professional teacher for Indian students.
 
-Include:
+Topic: {topic}
+
+Create structured STUDY NOTES:
 - Simple definition
-- Key points
+- Key points in bullets
 - Exam important points
-- Easy explanation in Indian student style
+- Real-life example
+- Short revision summary
 """
 
-    elif mode == "ppt":
-        prompt = f"""
-Create PPT CONTENT for: {topic}
+        elif mode == "ppt":
+            prompt = f"""
+You are a PowerPoint expert.
+
+Create a clean PPT for students.
+
+Topic: {topic}
+
+Rules:
+- 6 to 8 slides
+- Each slide: title + 3-4 bullets
+- Simple English
 
 Format:
 Slide 1: Title
 Slide 2: Introduction
-Slide 3: Main points
-Slide 4: Examples
-Slide 5: Conclusion
+Slide 3: Main Concept
+Slide 4: Explanation
+Slide 5: Examples
+Slide 6: Uses
+Slide 7: Conclusion
 """
 
-    elif mode == "code":
-        prompt = f"""
-Generate Python or Arduino CODE for: {topic}
+        elif mode == "code":
+            prompt = f"""
+You are a coding teacher.
 
-Also explain step by step in simple language.
+Topic: {topic}
+
+Give:
+1. Working code
+2. Explanation
+3. Output example
+4. Common mistakes
 """
 
-    elif mode == "deep":
-        prompt = f"""
-Give FULL DEEP PROJECT for: {topic}
+        elif mode == "deep":
+            prompt = f"""
+You are an advanced AI tutor.
 
-Include:
-- Full explanation
-- PPT content
-- PDF style notes
-- Code (if needed)
+Topic: {topic}
+
+Give full deep explanation:
+- Concept
+- Step-by-step breakdown
+- Real-life applications
 - Viva questions
-- Real life examples
+- Summary
 """
 
-    else:
-        prompt = f"Explain {topic}"
+        else:
+            prompt = f"Explain {topic} in simple terms"
 
-    # ---------------- OPENAI CALL ----------------
+        # ---------------- OPENAI CALL ----------------
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
+        result = response["choices"][0]["message"]["content"]
 
-    result = response["choices"][0]["message"]["content"]
+        return jsonify({
+            "result": result,
+            "mode": mode,
+            "topic": topic
+        })
 
-    return jsonify({"result": result})
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        })
 
 
 # ---------------- RUN SERVER ----------------
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
